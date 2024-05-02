@@ -30,5 +30,5 @@ func RegisterRoutes(app *fiber.App, userService handler.UserActions, prodService
 	// read from excel show as json
 	v1.Get("/products/read", prodHandler.ReadExcelFile)
 	// write to excel file
-	v1.Get("/products/write", )
+	// v1.Get("/products/write", )
 }

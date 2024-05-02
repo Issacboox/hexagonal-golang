@@ -14,10 +14,9 @@ type ProductActions interface {
 	DeleteProduct(id uint) error
 	FindProductByName(name string) ([]*m.Product, error)
 	GetProducts() ([]*m.Product, error)
-	InsertProductsFromExcel(file *multipart.FileHeader) error
+	InsertProductsFromExcel(file *multipart.FileHeader) ([]*m.Product, error)
 	ReadExcelFile(file *multipart.FileHeader) ([][]string, error)
 }
-
 
 type ProductHandler struct {
 	prodService ProductActions
@@ -111,7 +110,21 @@ func (h *ProductHandler) GetProducts(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
 	}
 
-	return c.JSON(fiber.Map{"products": prods, "total": len(prods), "message": "success", "status": 200, "success": true})
+	// Convert []*m.Product to []m.Product
+	var products []m.Product
+	for _, p := range prods {
+		products = append(products, *p)
+	}
+
+	response := m.ProductResponse{
+		Products: products,
+		Total:    len(products),
+		Message:  "success",
+		Status:   fiber.StatusOK,
+		Success:  true,
+	}
+
+	return c.JSON(response)
 }
 
 func (h *ProductHandler) InsertProductsFromExcel(c *fiber.Ctx) error {
@@ -120,9 +133,13 @@ func (h *ProductHandler) InsertProductsFromExcel(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
 	}
 
-	err = h.prodService.InsertProductsFromExcel(file)
+	duplicateProducts, err := h.prodService.InsertProductsFromExcel(file)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
+	}
+
+	if len(duplicateProducts) > 0 {
+		return c.Status(fiber.StatusConflict).JSON(fiber.Map{"The information already exists": duplicateProducts})
 	}
 
 	return c.SendString("Products inserted successfully")

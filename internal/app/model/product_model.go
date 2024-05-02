@@ -6,3 +6,10 @@ type Product struct {
 	Price    int    `json:"price"`
 	Quantity int    `json:"quantity"`
 }
+type ProductResponse struct {
+    Products []Product `json:"products"`
+    Total    int          `json:"total"`
+    Message  string       `json:"message"`
+    Status   int          `json:"status"`
+    Success  bool         `json:"success"`
+}

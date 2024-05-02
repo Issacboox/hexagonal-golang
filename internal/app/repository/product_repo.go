@@ -16,9 +16,11 @@ type IProductRepository interface {
 	DeleteProduct(id uint) error
 	FindProductByName(name string) ([]*m.Product, error)
 	FindProducts() ([]*m.Product, error)
-	InsertProductsFromExcel(file *multipart.FileHeader) error
+	InsertProductsFromExcel(file *multipart.FileHeader) ([]*m.Product, error)
+	// InsertProductsFromExcel(file *multipart.FileHeader) ([]*m.Product, error)
 	ReadExcelFile(file *multipart.FileHeader) ([][]string, error)
 }
+
 
 type ProductRepository struct {
 	db             *gorm.DB
@@ -61,45 +63,65 @@ func (r *ProductRepository) FindProducts() ([]*m.Product, error) {
 	result := r.db.Find(&prods)
 	return prods, result.Error
 }
-func (r *ProductRepository) InsertProductsFromExcel(file *multipart.FileHeader) error {
-	// Read Excel file and insert data into the database
-	// Example code using excelize to read Excel file:
-	f, err := excelize.OpenFile(file.Filename)
-	if err != nil {
-		return err
-	}
 
-	// Start a transaction
-	tx := r.db.Begin()
+func (r *ProductRepository) InsertProductsFromExcel(file *multipart.FileHeader) ([]*m.Product, error) {
+    // Start a transaction
+    tx := r.db.Begin()
 
-	rows := f.GetRows("Sheet1")
-	for _, row := range rows {
-		name := row[0]
-		priceStr := row[1]
-		quantityStr := row[2]
+    var insertedProducts []*m.Product
+    var duplicatedProducts []*m.Product
 
-		// Convert price and quantity strings to int
-		price, err := strconv.Atoi(priceStr)
-		if err != nil {
-			tx.Rollback()
-			return err
-		}
-		quantity, err := strconv.Atoi(quantityStr)
-		if err != nil {
-			tx.Rollback()
-			return err
-		}
+    f, err := excelize.OpenFile(file.Filename)
+    if err != nil {
+        tx.Rollback()
+        return nil, err
+    }
 
-		prod := &m.Product{Name: name, Price: price, Quantity: quantity}
-		if err := tx.Create(prod).Error; err != nil {
-			tx.Rollback()
-			return err
-		}
-	}
+    rows := f.GetRows("Sheet1")
+    for _, row := range rows {
+        name := row[0]
+        priceStr := row[1]
+        quantityStr := row[2]
 
-	// Commit the transaction
-	return tx.Commit().Error
+        // Convert price and quantity strings to int
+        price, err := strconv.Atoi(priceStr)
+        if err != nil {
+            tx.Rollback()
+            return nil, err
+        }
+        quantity, err := strconv.Atoi(quantityStr)
+        if err != nil {
+            tx.Rollback()
+            return nil, err
+        }
+
+        // Check if the product already exists
+        var existingProd m.Product
+        result := tx.Where("name = ?", name).First(&existingProd)
+        if result.Error == nil {
+            // Product already exists, add it to duplicatedProducts
+            duplicatedProducts = append(duplicatedProducts, &existingProd)
+            continue
+        }
+
+        // Product does not exist, create a new one
+        prod := &m.Product{Name: name, Price: price, Quantity: quantity}
+        if err := tx.Create(prod).Error; err != nil {
+            tx.Rollback()
+            return nil, err
+        }
+
+        insertedProducts = append(insertedProducts, prod)
+    }
+
+    // Commit the transaction
+    if err := tx.Commit().Error; err != nil {
+        return nil, err
+    }
+
+    return duplicatedProducts, nil
 }
+
 
 func (r *ProductRepository) ReadExcelFile(file *multipart.FileHeader) ([][]string, error) {
 	// Open the file
