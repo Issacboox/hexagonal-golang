@@ -1,7 +1,7 @@
 package service
 
 import (
-	"errors"
+	// "errors"
 	"bam/internal/app/model"
 	"bam/internal/app/repository"
 
@@ -39,19 +39,19 @@ func (s *UserService) DeleteUser(id uint) error {
 	return s.repo.DeleteUser(id)
 }
 
-func (s *UserService) AuthenticateUser(email, password string) (*model.User, error) {
-	user, err := s.repo.FindUserByEmail(email)
-	if err != nil {
-		return nil, err
-	}
+// func (s *UserService) AuthenticateUser(email, password string) (*model.User, error) {
+// 	user, err := s.repo.FindUserByEmail(email)
+// 	if err != nil {
+// 		return nil, err
+// 	}
 
-	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password))
-	if err != nil {
-		return nil, errors.New("invalid credentials")
-	}
+// 	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password))
+// 	if err != nil {
+// 		return nil, errors.New("invalid credentials")
+// 	}
 
-	return user, nil
-}
+// 	return user, nil
+// }
 
 func (s *UserService) GetUsers() ([]*model.User, error) {
 	return s.repo.FindUsers()

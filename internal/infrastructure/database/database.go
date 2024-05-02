@@ -2,6 +2,7 @@ package database
 
 import (
 	"bam/internal/app/model"
+
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 )
@@ -12,8 +13,7 @@ func ConnectDB(dsn string) (*gorm.DB, error) {
 		return nil, err
 	}
 
-	err = db.AutoMigrate(&model.User{})
-	if err != nil {
+	if err := db.AutoMigrate(&model.User{}, &model.Product{}); err != nil {
 		return nil, err
 	}
 
