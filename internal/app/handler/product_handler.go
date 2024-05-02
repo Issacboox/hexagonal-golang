@@ -13,6 +13,7 @@ type ProductActions interface {
 	DeleteProduct(id uint) error
 	FindProductByName(name string) ([]*m.Product, error)
 	GetProducts() ([]*m.Product, error)
+	InsertProductsFromExcel(filename string) error
 }
 
 type ProductHandler struct {
@@ -23,15 +24,6 @@ func NewProductHandler(service ProductActions) *ProductHandler {
 	return &ProductHandler{prodService: service}
 }
 
-// func (h *ProductHandler) RegisterProductRoutes(app *fiber.App) {
-// 	app.Post("/products", h.CreateProduct)
-// 	app.Get("/products/:id", h.GetProductByID)
-// 	app.Put("/products/:id", h.UpdateProduct)
-// 	app.Delete("/products/:id", h.DeleteProduct)
-// 	app.Get("/products", h.GetProducts)
-// 	app.Get("/name", h.FindProductByName)
-
-// }
 
 func (h *ProductHandler) CreateProduct(c *fiber.Ctx) error {
 
@@ -121,4 +113,18 @@ func (h *ProductHandler) GetProducts(c *fiber.Ctx) error {
 	}
 
 	return c.JSON(fiber.Map{"products": prods, "total": len(prods), "message": "success", "status": 200, "success": true})
+}
+
+
+// excel 
+func (h *ProductHandler) InsertProductsFromExcel(c *fiber.Ctx) error {
+    file, err := c.FormFile("file")
+    if err != nil {
+        return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
+    }
+    err = h.prodService.InsertProductsFromExcel(file.Filename)
+    if err != nil {
+        return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
+    }
+    return c.SendString("Products inserted successfully")
 }

@@ -2,7 +2,9 @@ package repository
 
 import (
 	m "bam/internal/app/model"
+	"strconv"
 
+	"github.com/360EntSecGroup-Skylar/excelize"
 	"gorm.io/gorm"
 )
 
@@ -13,6 +15,7 @@ type IProductRepository interface {
 	DeleteProduct(id uint) error
 	FindProductByName(name string) ([]*m.Product, error)
 	FindProducts() ([]*m.Product, error)
+	InsertProductsFromExcel(file string) error
 }
 
 type ProductRepository struct {
@@ -43,16 +46,47 @@ func (r *ProductRepository) DeleteProduct(id uint) error {
 }
 
 func (r *ProductRepository) FindProductByName(name string) ([]*m.Product, error) {
-    var prods []*m.Product
-    result := r.db.Where("name = ?", name).Find(&prods)
-    if result.Error != nil {
-        return nil, result.Error
-    }
-    return prods, nil
+	var prods []*m.Product
+	result := r.db.Where("name = ?", name).Find(&prods)
+	if result.Error != nil {
+		return nil, result.Error
+	}
+	return prods, nil
 }
 
 func (r *ProductRepository) FindProducts() ([]*m.Product, error) {
 	var prods []*m.Product
 	result := r.db.Find(&prods)
 	return prods, result.Error
+}
+
+func (r *ProductRepository) InsertProductsFromExcel(file string) error {
+    // Read Excel file and insert data into the database
+    // Example code using excelize to read Excel file:
+    f, err := excelize.OpenFile(file)
+    if err != nil {
+        return err
+    }
+    rows := f.GetRows("Sheet1")
+    for _, row := range rows {
+        name := row[0]
+        priceStr := row[1]
+        quantityStr := row[2]
+
+        // Convert price and quantity strings to int
+        price, err := strconv.Atoi(priceStr)
+        if err != nil {
+            return err
+        }
+        quantity, err := strconv.Atoi(quantityStr)
+        if err != nil {
+            return err
+        }
+
+        prod := &m.Product{Name: name, Price: price, Quantity: quantity}
+        if err := r.db.Create(prod).Error; err != nil {
+            return err
+        }
+    }
+    return nil
 }

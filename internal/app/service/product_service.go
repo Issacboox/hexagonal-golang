@@ -33,6 +33,11 @@ func (s *ProductService) DeleteProduct(id uint) error {
 func (s *ProductService) GetProducts() ([]*m.Product, error) {
 	return s.repo.FindProducts()
 }
+
 func (s *ProductService) FindProductByName(name string) ([]*m.Product, error) {
-    return s.repo.FindProductByName(name)
+	return s.repo.FindProductByName(name)
+}
+
+func (s *ProductService) InsertProductsFromExcel(file string) error {
+    return s.repo.InsertProductsFromExcel(file)
 }

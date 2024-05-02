@@ -26,4 +26,5 @@ func RegisterRoutes(app *fiber.App, userService handler.UserActions, prodService
 	v1.Get("/name", prodHandler.FindProductByName)
 
 	// import from excel?
+	v1.Post("/products/import", prodHandler.InsertProductsFromExcel)
 }
