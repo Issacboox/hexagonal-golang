@@ -22,13 +22,13 @@ func NewUserHandler(service UserActions) *UserHandler {
 	return &UserHandler{service: service}
 }
 
-func (h *UserHandler) RegisterRoutes(app *fiber.App) {
-	app.Post("/users", h.CreateUser)
-	app.Get("/users/:id", h.GetUser)
-	app.Put("/users/:id", h.UpdateUser)
-	app.Delete("/users/:id", h.DeleteUser)
-	app.Get("/users", h.GetUsers)
-}
+// func (h *UserHandler) RegisterRoutes(app *fiber.App) {
+// 	app.Post("/users", h.CreateUser)
+// 	app.Get("/users/:id", h.GetUser)
+// 	app.Put("/users/:id", h.UpdateUser)
+// 	app.Delete("/users/:id", h.DeleteUser)
+// 	app.Get("/users", h.GetUsers)
+// }
 
 func (h *UserHandler) CreateUser(c *fiber.Ctx) error {
 

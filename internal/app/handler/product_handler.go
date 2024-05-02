@@ -23,15 +23,15 @@ func NewProductHandler(service ProductActions) *ProductHandler {
 	return &ProductHandler{prodService: service}
 }
 
-func (h *ProductHandler) RegisterProductRoutes(app *fiber.App) {
-	app.Post("/products", h.CreateProduct)
-	app.Get("/products/:id", h.GetProductByID)
-	app.Put("/products/:id", h.UpdateProduct)
-	app.Delete("/products/:id", h.DeleteProduct)
-	app.Get("/products", h.GetProducts)
-	app.Get("/name", h.FindProductByName)
+// func (h *ProductHandler) RegisterProductRoutes(app *fiber.App) {
+// 	app.Post("/products", h.CreateProduct)
+// 	app.Get("/products/:id", h.GetProductByID)
+// 	app.Put("/products/:id", h.UpdateProduct)
+// 	app.Delete("/products/:id", h.DeleteProduct)
+// 	app.Get("/products", h.GetProducts)
+// 	app.Get("/name", h.FindProductByName)
 
-}
+// }
 
 func (h *ProductHandler) CreateProduct(c *fiber.Ctx) error {
 

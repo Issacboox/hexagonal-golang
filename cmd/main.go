@@ -1,9 +1,11 @@
 package main
 
 import (
-	"bam/internal/app/handler"
+	// "bam/internal/app/handler"
 	"bam/internal/app/repository"
 	"bam/internal/app/service"
+	"bam/route"
+
 	"bam/internal/infrastructure/database"
 	"encoding/json"
 	"fmt"
@@ -50,18 +52,11 @@ func main() {
 
 	userRepo := repository.NewUserRepository(db)
 	userService := service.NewUserService(userRepo)
-	userHandler := handler.NewUserHandler(userService)
 
 	prodRepo := repository.NewProductRepository(db)
 	prodService := service.NewProductService(prodRepo)
-	prodHandler := handler.NewProductHandler(prodService)
-	
-	// jwtService := service.NewJWTService()
-	// authHandler := handler.NewAuthHandler(userService, jwtService)
 
-	userHandler.RegisterRoutes(app)
-	prodHandler.RegisterProductRoutes(app)
-	// authHandler.RegisterRoutes(app)
+	route.RegisterRoutes(app, userService, prodService)
 
 	err = app.Listen(":8080")
 	if err != nil {
