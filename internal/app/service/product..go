@@ -33,3 +33,8 @@ func (s *ProductService) DeleteProduct(id uint) error {
 func (s *ProductService) GetProducts() ([]*m.Product, error) {
 	return s.repo.FindProducts()
 }
+
+// Update the return type to return both a slice of products and an error
+func (s *ProductService) FindProductByName(name string) ([]*m.Product, error) {
+    return s.repo.FindProductByName(name)
+}

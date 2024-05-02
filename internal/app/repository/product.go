@@ -11,7 +11,7 @@ type IProductRepository interface {
 	FindProductByID(id uint) (*m.Product, error)
 	UpdateProduct(prod *m.Product) error
 	DeleteProduct(id uint) error
-	FindProductByEmail(email string) (*m.Product, error)
+	FindProductByName(name string) ([]*m.Product, error)
 	FindProducts() ([]*m.Product, error)
 }
 
@@ -42,13 +42,13 @@ func (r *ProductRepository) DeleteProduct(id uint) error {
 	return r.db.Delete(&m.Product{}, id).Error
 }
 
-func (r *ProductRepository) FindProductByName(name string) (*m.Product, error) {
-	var prod m.Product
-	result := r.db.Where("name = ?", name).First(&prod)
-	if result.Error != nil {
-		return nil, result.Error
-	}
-	return &prod, nil
+func (r *ProductRepository) FindProductByName(name string) ([]*m.Product, error) {
+    var prods []*m.Product
+    result := r.db.Where("name = ?", name).Find(&prods)
+    if result.Error != nil {
+        return nil, result.Error
+    }
+    return prods, nil
 }
 
 func (r *ProductRepository) FindProducts() ([]*m.Product, error) {

@@ -25,7 +25,6 @@ func main() {
 
 	configFile, err := os.Open("C:/Users/Sirin/OneDrive/เอกสาร/go/v2/internal/config/config.json")
 
-
 	if err != nil {
 		panic(err)
 	}
@@ -52,10 +51,16 @@ func main() {
 	userRepo := repository.NewUserRepository(db)
 	userService := service.NewUserService(userRepo)
 	userHandler := handler.NewUserHandler(userService)
+
+	prodRepo := repository.NewProductRepository(db)
+	prodService := service.NewProductService(prodRepo)
+	prodHandler := handler.NewProductHandler(prodService)
+	
 	// jwtService := service.NewJWTService()
 	// authHandler := handler.NewAuthHandler(userService, jwtService)
 
 	userHandler.RegisterRoutes(app)
+	prodHandler.RegisterProductRoutes(app)
 	// authHandler.RegisterRoutes(app)
 
 	err = app.Listen(":8080")
