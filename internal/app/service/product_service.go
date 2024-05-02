@@ -41,6 +41,7 @@ func (s *ProductService) GetProducts() ([]*m.Product, error) {
 func (s *ProductService) FindProductByName(name string) ([]*m.Product, error) {
 	return s.repo.FindProductByName(name)
 }
+
 func (s *ProductService) InsertProductsFromExcel(file *multipart.FileHeader) error {
 	// Open a reader from the file's stream
 	reader, err := file.Open()
@@ -83,4 +84,15 @@ func (s *ProductService) InsertProductsFromExcel(file *multipart.FileHeader) err
 	}
 
 	return nil
+}
+
+// Implement the ReadExcelFile method in your ProductService struct
+func (s *ProductService) ReadExcelFile(file *multipart.FileHeader) ([][]string, error) {
+	f, err := excelize.OpenFile(file.Filename)
+	if err != nil {
+		return nil, err
+	}
+
+	rows := f.GetRows("Sheet1")
+	return rows, nil
 }

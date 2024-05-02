@@ -17,6 +17,7 @@ type IProductRepository interface {
 	FindProductByName(name string) ([]*m.Product, error)
 	FindProducts() ([]*m.Product, error)
 	InsertProductsFromExcel(file *multipart.FileHeader) error
+	ReadExcelFile(file *multipart.FileHeader) ([][]string, error)
 }
 
 type ProductRepository struct {
@@ -98,4 +99,23 @@ func (r *ProductRepository) InsertProductsFromExcel(file *multipart.FileHeader) 
 
 	// Commit the transaction
 	return tx.Commit().Error
+}
+
+func (r *ProductRepository) ReadExcelFile(file *multipart.FileHeader) ([][]string, error) {
+	// Open the file
+	excelFile, err := file.Open()
+	if err != nil {
+		return nil, err
+	}
+	defer excelFile.Close()
+
+	// Read the Excel file
+	f, err := excelize.OpenReader(excelFile)
+	if err != nil {
+		return nil, err
+	}
+
+	// Get all rows from the Sheet1
+	rows := f.GetRows("Sheet1")
+	return rows, nil
 }
