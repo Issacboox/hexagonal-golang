@@ -29,6 +29,8 @@ func (h *ProductHandler) RegisterProductRoutes(app *fiber.App) {
 	app.Put("/products/:id", h.UpdateProduct)
 	app.Delete("/products/:id", h.DeleteProduct)
 	app.Get("/products", h.GetProducts)
+	app.Get("/name", h.FindProductByName)
+
 }
 
 func (h *ProductHandler) CreateProduct(c *fiber.Ctx) error {
@@ -99,19 +101,18 @@ func (h *ProductHandler) DeleteProduct(c *fiber.Ctx) error {
 
 // Handler that finds a product by name using query parameters.
 func (h *ProductHandler) FindProductByName(c *fiber.Ctx) error {
-    name := c.Query("name")
-    if name == "" {
-        return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Name is required"})
-    }
+	name := c.Query("name")
+	if name == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Name is required"})
+	}
 
-    prod, err := h.prodService.FindProductByName(name)
-    if err != nil {
-        return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
-    }
+	prod, err := h.prodService.FindProductByName(name)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
+	}
 
-    return c.JSON(prod)
+	return c.JSON(prod)
 }
-
 
 func (h *ProductHandler) GetProducts(c *fiber.Ctx) error {
 	prods, err := h.prodService.GetProducts()
