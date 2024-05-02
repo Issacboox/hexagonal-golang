@@ -2,6 +2,7 @@ package handler
 
 import (
 	m "bam/internal/app/model"
+	"mime/multipart"
 
 	"github.com/gofiber/fiber/v2"
 )
@@ -13,7 +14,7 @@ type ProductActions interface {
 	DeleteProduct(id uint) error
 	FindProductByName(name string) ([]*m.Product, error)
 	GetProducts() ([]*m.Product, error)
-	InsertProductsFromExcel(filename string) error
+	InsertProductsFromExcel(file *multipart.FileHeader) error
 }
 
 type ProductHandler struct {
@@ -24,22 +25,18 @@ func NewProductHandler(service ProductActions) *ProductHandler {
 	return &ProductHandler{prodService: service}
 }
 
-
 func (h *ProductHandler) CreateProduct(c *fiber.Ctx) error {
-
 	prod := new(m.Product)
 	if err := c.BodyParser(prod); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
 	}
 
 	err := h.prodService.CreateProduct(prod)
-
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
 	}
 
 	return c.Status(fiber.StatusCreated).JSON(prod)
-
 }
 
 func (h *ProductHandler) GetProductByID(c *fiber.Ctx) error {
@@ -115,16 +112,29 @@ func (h *ProductHandler) GetProducts(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{"products": prods, "total": len(prods), "message": "success", "status": 200, "success": true})
 }
 
+// excel
+// func (h *ProductHandler) InsertProductsFromExcel(c *fiber.Ctx) error {
+//     file, err := c.FormFile("file")
+//     if err != nil {
+//         return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
+//     }
+//     err = h.prodService.InsertProductsFromExcel(file.Filename)
+//     if err != nil {
+//         return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
+//     }
+//     return c.SendString("Products inserted successfully")
+// }
 
-// excel 
 func (h *ProductHandler) InsertProductsFromExcel(c *fiber.Ctx) error {
-    file, err := c.FormFile("file")
-    if err != nil {
-        return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
-    }
-    err = h.prodService.InsertProductsFromExcel(file.Filename)
-    if err != nil {
-        return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
-    }
-    return c.SendString("Products inserted successfully")
+	file, err := c.FormFile("file")
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
+	}
+
+	err = h.prodService.InsertProductsFromExcel(file)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
+	}
+
+	return c.SendString("Products inserted successfully")
 }

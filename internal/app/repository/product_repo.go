@@ -2,6 +2,7 @@ package repository
 
 import (
 	m "bam/internal/app/model"
+	"mime/multipart"
 	"strconv"
 
 	"github.com/360EntSecGroup-Skylar/excelize"
@@ -15,7 +16,7 @@ type IProductRepository interface {
 	DeleteProduct(id uint) error
 	FindProductByName(name string) ([]*m.Product, error)
 	FindProducts() ([]*m.Product, error)
-	InsertProductsFromExcel(file string) error
+	InsertProductsFromExcel(file *multipart.FileHeader) error
 }
 
 type ProductRepository struct {
@@ -59,34 +60,42 @@ func (r *ProductRepository) FindProducts() ([]*m.Product, error) {
 	result := r.db.Find(&prods)
 	return prods, result.Error
 }
+func (r *ProductRepository) InsertProductsFromExcel(file *multipart.FileHeader) error {
+	// Read Excel file and insert data into the database
+	// Example code using excelize to read Excel file:
+	f, err := excelize.OpenFile(file.Filename)
+	if err != nil {
+		return err
+	}
 
-func (r *ProductRepository) InsertProductsFromExcel(file string) error {
-    // Read Excel file and insert data into the database
-    // Example code using excelize to read Excel file:
-    f, err := excelize.OpenFile(file)
-    if err != nil {
-        return err
-    }
-    rows := f.GetRows("Sheet1")
-    for _, row := range rows {
-        name := row[0]
-        priceStr := row[1]
-        quantityStr := row[2]
+	// Start a transaction
+	tx := r.db.Begin()
 
-        // Convert price and quantity strings to int
-        price, err := strconv.Atoi(priceStr)
-        if err != nil {
-            return err
-        }
-        quantity, err := strconv.Atoi(quantityStr)
-        if err != nil {
-            return err
-        }
+	rows := f.GetRows("Sheet1")
+	for _, row := range rows {
+		name := row[0]
+		priceStr := row[1]
+		quantityStr := row[2]
 
-        prod := &m.Product{Name: name, Price: price, Quantity: quantity}
-        if err := r.db.Create(prod).Error; err != nil {
-            return err
-        }
-    }
-    return nil
+		// Convert price and quantity strings to int
+		price, err := strconv.Atoi(priceStr)
+		if err != nil {
+			tx.Rollback()
+			return err
+		}
+		quantity, err := strconv.Atoi(quantityStr)
+		if err != nil {
+			tx.Rollback()
+			return err
+		}
+
+		prod := &m.Product{Name: name, Price: price, Quantity: quantity}
+		if err := tx.Create(prod).Error; err != nil {
+			tx.Rollback()
+			return err
+		}
+	}
+
+	// Commit the transaction
+	return tx.Commit().Error
 }
