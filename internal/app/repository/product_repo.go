@@ -2,7 +2,6 @@ package repository
 
 import (
 	m "bam/internal/app/model"
-	"errors"
 	"mime/multipart"
 	"strconv"
 
@@ -18,8 +17,7 @@ type IProductRepository interface {
 	FindProductByName(name string) ([]*m.Product, error)
 	FindProducts() ([]*m.Product, error)
 	InsertProductsFromExcel(file *multipart.FileHeader) ([]*m.Product, error)
-	// InsertProductsFromExcel(file *multipart.FileHeader) ([]*m.Product, error)
-	ReadExcelFile(file *multipart.FileHeader) ([]map[string]string, error)
+	ReadExcel(file *multipart.FileHeader) ([][]string, error)
 }
 
 type ProductRepository struct {
@@ -122,44 +120,22 @@ func (r *ProductRepository) InsertProductsFromExcel(file *multipart.FileHeader) 
 	return duplicatedProducts, nil
 }
 
-// ProductRepository implementation
-func (r *ProductRepository) ReadExcelFile(file *multipart.FileHeader) ([]map[string]string, error) {
-	// Open the file
-	excelFile, err := file.Open()
+func (er *ProductRepository) ReadExcel(file *multipart.FileHeader) ([][]string, error) {
+	f, err := file.Open()
 	if err != nil {
 		return nil, err
 	}
-	defer excelFile.Close()
+	defer f.Close()
 
-	// Read the Excel file
-	f, err := excelize.OpenReader(excelFile)
+	xlsx, err := excelize.OpenReader(f)
 	if err != nil {
 		return nil, err
 	}
 
-	// Get all rows from the Sheet1
-	rows := f.GetRows("Sheet1")
-	if len(rows) == 0 {
-		return nil, errors.New("no data found in the Excel sheet")
-	}
+	// อ่านข้อมูล Excel
+	rows := xlsx.GetRows("Sheet1")
 
-	// Extract header row
-	headers := rows[0]
-
-	// Initialize a slice to store JSON objects
-	var jsonData []map[string]string
-
-	// Process each row starting from the second row
-	for _, row := range rows[1:] {
-		// Create a map for the current row
-		rowData := make(map[string]string)
-		for i, header := range headers {
-			// Map header to column data
-			rowData[header] = row[i]
-		}
-		// Append row data to JSON array
-		jsonData = append(jsonData, rowData)
-	}
-
-	return jsonData, nil
+	return rows, nil
 }
+
+

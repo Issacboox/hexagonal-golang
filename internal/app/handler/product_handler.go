@@ -15,7 +15,7 @@ type ProductActions interface {
 	FindProductByName(name string) ([]*m.Product, error)
 	GetProducts() ([]*m.Product, error)
 	InsertProductsFromExcel(file *multipart.FileHeader) ([]*m.Product, error)
-	ReadExcelFile(file *multipart.FileHeader) ([]*m.Product, error)
+	ReadExcel(file *multipart.FileHeader) ([]string, error)
 }
 
 type ProductHandler struct {
@@ -144,17 +144,33 @@ func (h *ProductHandler) InsertProductsFromExcel(c *fiber.Ctx) error {
 
 	return c.SendString("Products inserted successfully")
 }
+
 // ProductHandler implementation
-func (h *ProductHandler) ReadExcelFile(c *fiber.Ctx) error {
-    file, err := c.FormFile("file")
-    if err != nil {
-        return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
-    }
+// func (h *ProductHandler) ReadExcel(c *fiber.Ctx) error {
+// 	file, err := c.FormFile("file")
+// 	if err != nil {
+// 		return err
+// 	}
 
-    data, err := h.prodService.ReadExcelFile(file)
-    if err != nil {
-        return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
-    }
+// 	rows, err := h.prodService.ReadExcel(file)
+// 	if err != nil {
+// 		return err
+// 	}
 
-    return c.JSON(data)
+// 	// ส่งข้อมูลกลับให้ผู้ใช้
+// 	return c.JSON(rows)
+// }
+func (h *ProductHandler) ReadExcel(c *fiber.Ctx) error {
+	file, err := c.FormFile("file")
+	if err != nil {
+		return err
+	}
+
+	rows, err := h.prodService.ReadExcel(file)
+	if err != nil {
+		return err
+	}
+
+	// ส่งข้อมูลกลับให้ผู้ใช้
+	return c.JSON(rows)
 }

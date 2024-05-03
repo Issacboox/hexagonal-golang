@@ -28,7 +28,7 @@ func RegisterRoutes(app *fiber.App, userService handler.UserActions, prodService
 	// import from excel?
 	v1.Post("/products/upload", prodHandler.InsertProductsFromExcel)
 	// read from excel show as json
-	v1.Get("/products/read", prodHandler.ReadExcelFile)
+	v1.Post("/products/read", prodHandler.ReadExcel)
 	// write to excel file
 	// v1.Get("/products/write", )
 }
