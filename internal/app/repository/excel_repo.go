@@ -21,7 +21,7 @@ func NewExcelRepository(db *gorm.DB) *ExcelRepository {
 	return &ExcelRepository{db: db}
 }
 
-func (er *ExcelRepository) ReadExcel(file *multipart.FileHeader) ([][]string, error) {
+func (r *ExcelRepository) ReadExcel(file *multipart.FileHeader) ([][]string, error) {
     f, err := file.Open()
     if err != nil {
         return nil, err
@@ -35,11 +35,15 @@ func (er *ExcelRepository) ReadExcel(file *multipart.FileHeader) ([][]string, er
 
     // อ่านข้อมูล Excel
     rows := xlsx.GetRows("Sheet1")
-
     return rows, nil
 }
 
 
-func (er *ExcelRepository) GetExcelData(data interface{}) *gorm.DB {
-	return er.db.Find(data)
-}
+// // GetExcelData retrieves Excel data from the database.
+// func (r *ExcelRepository) GetExcelData(data interface{}) *gorm.DB {
+// 	return r.db.Find(data)
+// }
+func (r *ExcelRepository) GetExcelData(data interface{}) *gorm.DB {
+    // Assuming data represents a struct or model for database interaction
+    return r.db.Model(data) // Replace Model with appropriate method if needed
+  }

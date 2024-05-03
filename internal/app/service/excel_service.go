@@ -3,13 +3,13 @@ package service
 import (
 	// "log"
 
+	"database/sql"
 	"fmt"
 	"strings"
 
 	// "fmt"
 	"mime/multipart"
 
-	m "bam/internal/app/model"
 	r "bam/internal/app/repository"
 
 	"github.com/360EntSecGroup-Skylar/excelize"
@@ -40,10 +40,18 @@ func (s *ExcelService) ReadExcel(file *multipart.FileHeader) ([]string, error) {
 
 func (s *ExcelService) ExportDataToExcel() (string, error) {
 	// Query data from the database
-	var products []*m.Product
-	if err := s.repo.GetExcelData(&products).Error; err != nil {
+	var (
+		rows *sql.Rows // Assuming sql.Rows for database result (might need adjustment)
+		err  error
+	)
+
+	// Replace with your actual logic to query data based on needs
+	// This assumes GetExcelData returns a queryable object
+	rows, err = s.repo.GetExcelData(nil).Rows()
+	if err != nil {
 		return "", err
 	}
+	defer rows.Close()
 
 	// Create a new Excel file
 	file := excelize.NewFile()
@@ -58,12 +66,23 @@ func (s *ExcelService) ExportDataToExcel() (string, error) {
 	file.SetCellValue("Sheet1", "D1", "Quantity")
 
 	// Fill in the data rows
-	for i, product := range products {
-		row := i + 2 // Excel rows start from 1, but slice index starts from 0
-		file.SetCellValue("Sheet1", fmt.Sprintf("A%d", row), product.ID)
-		file.SetCellValue("Sheet1", fmt.Sprintf("B%d", row), product.Name)
-		file.SetCellValue("Sheet1", fmt.Sprintf("C%d", row), product.Price)
-		file.SetCellValue("Sheet1", fmt.Sprintf("D%d", row), product.Quantity)
+	row := 2
+	for rows.Next() {
+		// Scan data into appropriate variables based on your data structure
+		var id int
+		var name string
+		var price int
+		var quantity int
+		err := rows.Scan(&id, &name, &price, &quantity)
+		if err != nil {
+			return "", err
+		}
+
+		file.SetCellValue("Sheet1", fmt.Sprintf("A%d", row), id)
+		file.SetCellValue("Sheet1", fmt.Sprintf("B%d", row), name)
+		file.SetCellValue("Sheet1", fmt.Sprintf("C%d", row), price)
+		file.SetCellValue("Sheet1", fmt.Sprintf("D%d", row), quantity)
+		row++
 	}
 
 	// Set active sheet of the workbook
