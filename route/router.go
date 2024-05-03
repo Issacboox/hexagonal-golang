@@ -30,6 +30,6 @@ func RegisterRoutes(app *fiber.App, userService handler.UserActions, prodService
 	// read from excel show as json
 	v1.Post("/products/read", excelHandler.ReadExcel)
 	// write to excel file
-	v1.Get("/products/write", excelHandler.ExportDataToExcel)
+	v1.Get("/products/export", excelHandler.ExportDataToExcel)
 
 }

@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"fmt"
 	"mime/multipart"
 
 	"github.com/gofiber/fiber/v2"
@@ -38,6 +39,8 @@ func (h *ExcelHandler) ExportDataToExcel(c *fiber.Ctx) error {
 	// Call the service to export data to Excel
 	excelFileName, err := h.excelService.ExportDataToExcel()
 	if err != nil {
+		// Log the error
+		fmt.Println("Error exporting data to Excel:", err)
 		return err
 	}
 

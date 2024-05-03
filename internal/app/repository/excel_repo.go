@@ -9,7 +9,7 @@ import (
 
 type IExcelRepository interface {
 	ReadExcel(file *multipart.FileHeader) ([][]string, error)
-    GetExcelData(data interface{}) *gorm.DB
+	GetExcelData(data interface{}) *gorm.DB
 }
 
 type ExcelRepository struct {
@@ -22,28 +22,21 @@ func NewExcelRepository(db *gorm.DB) *ExcelRepository {
 }
 
 func (r *ExcelRepository) ReadExcel(file *multipart.FileHeader) ([][]string, error) {
-    f, err := file.Open()
-    if err != nil {
-        return nil, err
-    }
-    defer f.Close()
+	f, err := file.Open()
+	if err != nil {
+		return nil, err
+	}
+	defer f.Close()
 
-    xlsx, err := excelize.OpenReader(f)
-    if err != nil {
-        return nil, err
-    }
+	xlsx, err := excelize.OpenReader(f)
+	if err != nil {
+		return nil, err
+	}
 
-    // อ่านข้อมูล Excel
-    rows := xlsx.GetRows("Sheet1")
-    return rows, nil
+	// อ่านข้อมูล Excel
+	rows := xlsx.GetRows("Sheet1")
+	return rows, nil
 }
-
-
-// // GetExcelData retrieves Excel data from the database.
-// func (r *ExcelRepository) GetExcelData(data interface{}) *gorm.DB {
-// 	return r.db.Find(data)
-// }
 func (r *ExcelRepository) GetExcelData(data interface{}) *gorm.DB {
-    // Assuming data represents a struct or model for database interaction
-    return r.db.Model(data) // Replace Model with appropriate method if needed
-  }
+	return r.db.Find(data)
+}
