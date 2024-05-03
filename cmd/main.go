@@ -56,7 +56,10 @@ func main() {
 	prodRepo := repository.NewProductRepository(db)
 	prodService := service.NewProductService(prodRepo)
 
-	route.RegisterRoutes(app, userService, prodService)
+	excelRepo := repository.NewExcelRepository(db)
+	excelService := service.NewExcelService(excelRepo)
+
+	route.RegisterRoutes(app, userService, prodService, excelService)
 
 	err = app.Listen(":8080")
 	if err != nil {

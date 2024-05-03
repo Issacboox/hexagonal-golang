@@ -7,9 +7,10 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
-func RegisterRoutes(app *fiber.App, userService handler.UserActions, prodService handler.ProductActions) {
+func RegisterRoutes(app *fiber.App, userService handler.UserActions, prodService handler.ProductActions, excelService handler.ExcelActions) {
 	userHandler := handler.NewUserHandler(userService)
 	prodHandler := handler.NewProductHandler(prodService)
+	excelHandler := handler.NewExcelHandler(excelService)
 
 	v1 := app.Group("/api/v1")
 	v1.Post("/users", userHandler.CreateUser)
@@ -24,11 +25,11 @@ func RegisterRoutes(app *fiber.App, userService handler.UserActions, prodService
 	v1.Delete("/products/:id", prodHandler.DeleteProduct)
 	v1.Get("/products", prodHandler.GetProducts)
 	v1.Get("/name", prodHandler.FindProductByName)
-
 	// import from excel?
 	v1.Post("/products/upload", prodHandler.InsertProductsFromExcel)
 	// read from excel show as json
-	v1.Post("/products/read", prodHandler.ReadExcel)
+	v1.Post("/products/read", excelHandler.ReadExcel)
 	// write to excel file
-	// v1.Get("/products/write", )
+	v1.Get("/products/write", excelHandler.ExportDataToExcel)
+
 }

@@ -17,7 +17,6 @@ type IProductRepository interface {
 	FindProductByName(name string) ([]*m.Product, error)
 	FindProducts() ([]*m.Product, error)
 	InsertProductsFromExcel(file *multipart.FileHeader) ([]*m.Product, error)
-	ReadExcel(file *multipart.FileHeader) ([][]string, error)
 }
 
 type ProductRepository struct {
@@ -119,23 +118,3 @@ func (r *ProductRepository) InsertProductsFromExcel(file *multipart.FileHeader) 
 
 	return duplicatedProducts, nil
 }
-
-func (er *ProductRepository) ReadExcel(file *multipart.FileHeader) ([][]string, error) {
-	f, err := file.Open()
-	if err != nil {
-		return nil, err
-	}
-	defer f.Close()
-
-	xlsx, err := excelize.OpenReader(f)
-	if err != nil {
-		return nil, err
-	}
-
-	// อ่านข้อมูล Excel
-	rows := xlsx.GetRows("Sheet1")
-
-	return rows, nil
-}
-
-

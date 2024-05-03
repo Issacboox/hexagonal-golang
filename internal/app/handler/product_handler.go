@@ -15,7 +15,6 @@ type ProductActions interface {
 	FindProductByName(name string) ([]*m.Product, error)
 	GetProducts() ([]*m.Product, error)
 	InsertProductsFromExcel(file *multipart.FileHeader) ([]*m.Product, error)
-	ReadExcel(file *multipart.FileHeader) ([]string, error)
 }
 
 type ProductHandler struct {
@@ -126,7 +125,6 @@ func (h *ProductHandler) GetProducts(c *fiber.Ctx) error {
 
 	return c.JSON(response)
 }
-
 func (h *ProductHandler) InsertProductsFromExcel(c *fiber.Ctx) error {
 	file, err := c.FormFile("file")
 	if err != nil {
@@ -143,34 +141,4 @@ func (h *ProductHandler) InsertProductsFromExcel(c *fiber.Ctx) error {
 	}
 
 	return c.SendString("Products inserted successfully")
-}
-
-// ProductHandler implementation
-// func (h *ProductHandler) ReadExcel(c *fiber.Ctx) error {
-// 	file, err := c.FormFile("file")
-// 	if err != nil {
-// 		return err
-// 	}
-
-// 	rows, err := h.prodService.ReadExcel(file)
-// 	if err != nil {
-// 		return err
-// 	}
-
-// 	// ส่งข้อมูลกลับให้ผู้ใช้
-// 	return c.JSON(rows)
-// }
-func (h *ProductHandler) ReadExcel(c *fiber.Ctx) error {
-	file, err := c.FormFile("file")
-	if err != nil {
-		return err
-	}
-
-	rows, err := h.prodService.ReadExcel(file)
-	if err != nil {
-		return err
-	}
-
-	// ส่งข้อมูลกลับให้ผู้ใช้
-	return c.JSON(rows)
 }

@@ -3,7 +3,6 @@ package service
 import (
 	// "log"
 	"errors"
-	"strings"
 	// "fmt"
 	"mime/multipart"
 	"strconv"
@@ -127,19 +126,4 @@ func (s *ProductService) InsertProductsFromExcel(file *multipart.FileHeader) ([]
 	}
 
 	return duplicateProducts, nil
-}
-
-// Implement the ReadExcelFile method in your ProductService struct
-func (s *ProductService) ReadExcel(file *multipart.FileHeader) ([]string, error) {
-    rows, err := s.repo.ReadExcel(file)
-    if err != nil {
-        return nil, err
-    }
-
-    var result []string
-    for _, row := range rows {
-        result = append(result, strings.Join(row, ","))
-    }
-
-    return result, nil
 }
