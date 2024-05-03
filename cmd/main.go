@@ -59,6 +59,10 @@ func main() {
 	excelRepo := repository.NewExcelRepository(db)
 	excelService := service.NewExcelService(excelRepo)
 
+	// authRepo := repository.NewAuthRepository(db)
+	// authService := service.NewAuthService(authRepo)
+
+
 	route.RegisterRoutes(app, userService, prodService, excelService)
 
 	err = app.Listen(":8080")

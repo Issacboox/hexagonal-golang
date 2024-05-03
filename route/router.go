@@ -11,6 +11,7 @@ func RegisterRoutes(app *fiber.App, userService handler.UserActions, prodService
 	userHandler := handler.NewUserHandler(userService)
 	prodHandler := handler.NewProductHandler(prodService)
 	excelHandler := handler.NewExcelHandler(excelService)
+	// authHandler := handler.NewAuthHandler(authHandler)
 
 	v1 := app.Group("/api/v1")
 	v1.Post("/users", userHandler.CreateUser)
