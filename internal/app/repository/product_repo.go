@@ -48,12 +48,13 @@ func (r *ProductRepository) DeleteProduct(id uint) error {
 
 func (r *ProductRepository) FindProductByName(name string) ([]*m.Product, error) {
 	var prods []*m.Product
-	result := r.db.Where("name = ?", name).Find(&prods)
+	result := r.db.Where("name LIKE ?", "%"+name+"%").Find(&prods)
 	if result.Error != nil {
 		return nil, result.Error
 	}
 	return prods, nil
 }
+
 
 func (r *ProductRepository) FindProducts() ([]*m.Product, error) {
 	var prods []*m.Product
