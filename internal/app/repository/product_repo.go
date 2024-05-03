@@ -2,6 +2,7 @@ package repository
 
 import (
 	m "bam/internal/app/model"
+	"errors"
 	"mime/multipart"
 	"strconv"
 
@@ -18,9 +19,8 @@ type IProductRepository interface {
 	FindProducts() ([]*m.Product, error)
 	InsertProductsFromExcel(file *multipart.FileHeader) ([]*m.Product, error)
 	// InsertProductsFromExcel(file *multipart.FileHeader) ([]*m.Product, error)
-	ReadExcelFile(file *multipart.FileHeader) ([][]string, error)
+	ReadExcelFile(file *multipart.FileHeader) ([]map[string]string, error)
 }
-
 
 type ProductRepository struct {
 	db             *gorm.DB
@@ -65,65 +65,65 @@ func (r *ProductRepository) FindProducts() ([]*m.Product, error) {
 }
 
 func (r *ProductRepository) InsertProductsFromExcel(file *multipart.FileHeader) ([]*m.Product, error) {
-    // Start a transaction
-    tx := r.db.Begin()
+	// Start a transaction
+	tx := r.db.Begin()
 
-    var insertedProducts []*m.Product
-    var duplicatedProducts []*m.Product
+	var insertedProducts []*m.Product
+	var duplicatedProducts []*m.Product
 
-    f, err := excelize.OpenFile(file.Filename)
-    if err != nil {
-        tx.Rollback()
-        return nil, err
-    }
+	f, err := excelize.OpenFile(file.Filename)
+	if err != nil {
+		tx.Rollback()
+		return nil, err
+	}
 
-    rows := f.GetRows("Sheet1")
-    for _, row := range rows {
-        name := row[0]
-        priceStr := row[1]
-        quantityStr := row[2]
+	rows := f.GetRows("Sheet1")
+	for _, row := range rows {
+		name := row[0]
+		priceStr := row[1]
+		quantityStr := row[2]
 
-        // Convert price and quantity strings to int
-        price, err := strconv.Atoi(priceStr)
-        if err != nil {
-            tx.Rollback()
-            return nil, err
-        }
-        quantity, err := strconv.Atoi(quantityStr)
-        if err != nil {
-            tx.Rollback()
-            return nil, err
-        }
+		// Convert price and quantity strings to int
+		price, err := strconv.Atoi(priceStr)
+		if err != nil {
+			tx.Rollback()
+			return nil, err
+		}
+		quantity, err := strconv.Atoi(quantityStr)
+		if err != nil {
+			tx.Rollback()
+			return nil, err
+		}
 
-        // Check if the product already exists
-        var existingProd m.Product
-        result := tx.Where("name = ?", name).First(&existingProd)
-        if result.Error == nil {
-            // Product already exists, add it to duplicatedProducts
-            duplicatedProducts = append(duplicatedProducts, &existingProd)
-            continue
-        }
+		// Check if the product already exists
+		var existingProd m.Product
+		result := tx.Where("name = ?", name).First(&existingProd)
+		if result.Error == nil {
+			// Product already exists, add it to duplicatedProducts
+			duplicatedProducts = append(duplicatedProducts, &existingProd)
+			continue
+		}
 
-        // Product does not exist, create a new one
-        prod := &m.Product{Name: name, Price: price, Quantity: quantity}
-        if err := tx.Create(prod).Error; err != nil {
-            tx.Rollback()
-            return nil, err
-        }
+		// Product does not exist, create a new one
+		prod := &m.Product{Name: name, Price: price, Quantity: quantity}
+		if err := tx.Create(prod).Error; err != nil {
+			tx.Rollback()
+			return nil, err
+		}
 
-        insertedProducts = append(insertedProducts, prod)
-    }
+		insertedProducts = append(insertedProducts, prod)
+	}
 
-    // Commit the transaction
-    if err := tx.Commit().Error; err != nil {
-        return nil, err
-    }
+	// Commit the transaction
+	if err := tx.Commit().Error; err != nil {
+		return nil, err
+	}
 
-    return duplicatedProducts, nil
+	return duplicatedProducts, nil
 }
 
-
-func (r *ProductRepository) ReadExcelFile(file *multipart.FileHeader) ([][]string, error) {
+// ProductRepository implementation
+func (r *ProductRepository) ReadExcelFile(file *multipart.FileHeader) ([]map[string]string, error) {
 	// Open the file
 	excelFile, err := file.Open()
 	if err != nil {
@@ -139,5 +139,27 @@ func (r *ProductRepository) ReadExcelFile(file *multipart.FileHeader) ([][]strin
 
 	// Get all rows from the Sheet1
 	rows := f.GetRows("Sheet1")
-	return rows, nil
+	if len(rows) == 0 {
+		return nil, errors.New("no data found in the Excel sheet")
+	}
+
+	// Extract header row
+	headers := rows[0]
+
+	// Initialize a slice to store JSON objects
+	var jsonData []map[string]string
+
+	// Process each row starting from the second row
+	for _, row := range rows[1:] {
+		// Create a map for the current row
+		rowData := make(map[string]string)
+		for i, header := range headers {
+			// Map header to column data
+			rowData[header] = row[i]
+		}
+		// Append row data to JSON array
+		jsonData = append(jsonData, rowData)
+	}
+
+	return jsonData, nil
 }
