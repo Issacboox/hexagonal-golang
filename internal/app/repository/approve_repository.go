@@ -75,13 +75,12 @@ func (r *ApproveRepository) DeleteOrdination(id uint) error {
 
 func (r *ApproveRepository) FindOrdinationByName(name string) ([]*m.RegisOrdinary, error) {
 	var regs []*m.RegisOrdinary
-	result := r.db.Where("fname LIKE ? OR lname LIKE ?", "%"+name+"%", "%"+name+"%").Find(&regs)
+	result := r.db.Where("first_name LIKE ? OR last_name LIKE ?", "%"+name+"%", "%"+name+"%").Find(&regs)
 	if result.Error != nil {
 		return nil, result.Error
 	}
 	return regs, nil
 }
-
 
 func (r *ApproveRepository) FindOrdinations() ([]*m.RegisOrdinary, error) {
 	var regs []*m.RegisOrdinary

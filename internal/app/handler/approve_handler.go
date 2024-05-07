@@ -165,6 +165,11 @@ func (h *ApproveHandler) UpdateOrdinationStatus(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
 	}
 
+	// Validate comment for Reject and Cancel statuses
+	if (req.Status == "Reject" || req.Status == "Cancel") && req.Comment == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Comment is required for Reject and Cancel statuses"})
+	}
+
 	// Update ordination status and comment
 	err := h.service.UpdateOrdinationStatus(req.ID, req.Status, req.Comment)
 	if err != nil {

@@ -44,9 +44,9 @@ func RegisterRoutes(app *fiber.App, userService handler.UserActions, prodService
 	// เอาทั้งหมด
 	v1.Get("/ordination", approveHandler.FindOrdinations)
 	// ค้นหาจากชื่อ - นามสกุล
-	v1.Get("/name", approveHandler.FindOrdinationByName)
+	v1.Get("/ordname", approveHandler.FindOrdinationByName)
 	// ค้นหาจาก สถานะ
-	v1.Get("/ordination/status", approveHandler.FindOrdinationByStatus)
+	v1.Get("/ordstatus", approveHandler.FindOrdinationByStatus)
 	// update สถานะ ถ้า cancel , reject ต้องใส่ comment ด้วย
-	v1.Put(("/ordination/status/:id"), approveHandler.UpdateOrdinationStatus)
+	v1.Put(("/ordstatus/:id"), approveHandler.UpdateOrdinationStatus)
 }

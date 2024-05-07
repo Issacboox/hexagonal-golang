@@ -3,6 +3,7 @@ package service
 import (
 	m "bam/internal/app/model"
 	r "bam/internal/app/repository"
+	"errors"
 )
 
 type ApproveService struct {
@@ -63,7 +64,7 @@ func (s *ApproveService) DeleteOrdination(id uint) error {
 
 // service
 func (s *ApproveService) FindOrdinationByName(name string) ([]*m.RegisOrdinary, error) {
-    return s.repo.FindOrdinationByName(name)
+	return s.repo.FindOrdinationByName(name)
 }
 
 // service/approve_service.go
@@ -75,6 +76,15 @@ func (s *ApproveService) FindOrdinationByStatus(status string) (*m.RegisOrdinary
 	return s.repo.FindOrdinationByStatus(status)
 }
 
+//	func (s *ApproveService) UpdateOrdinationStatus(id uint, status, comment string) error {
+//		return s.repo.UpdateOrdinationStatus(id, status, comment)
+//	}
 func (s *ApproveService) UpdateOrdinationStatus(id uint, status, comment string) error {
+	// Validate comment for Reject and Cancel statuses
+	if (status == "Reject" || status == "Cancel") && comment == "" {
+		return errors.New("comment is required for Reject and Cancel statuses")
+	}
+
+	// Update ordination status and comment
 	return s.repo.UpdateOrdinationStatus(id, status, comment)
 }
