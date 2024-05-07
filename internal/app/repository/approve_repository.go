@@ -97,6 +97,20 @@ func (r *ApproveRepository) FindOrdinationByStatus(status string) (*m.RegisOrdin
 	return &reg, nil
 }
 
-func (r *ApproveRepository) UpdateOrdinationStatus(id uint, status, comment string) error {
-	return r.db.Model(&m.RegisOrdinary{}).Where("id = ?", id).Updates(map[string]interface{}{"status": status, "comment": comment}).Error
+// func (r *ApproveRepository) UpdateOrdinationStatus(id uint, status, comment string) error {
+// 	return r.db.Model(&m.RegisOrdinary{}).Where("id = ?", id).Updates(map[string]interface{}{"status": status, "comment": comment}).Error
+// }
+func (r *ApproveRepository) UpdateOrdinationStatus(reg *m.RegisOrdinary) error {
+	// Validate gender
+	if reg.Status != m.Waiting && reg.Status != m.Approve && reg.Status != m.Reject && reg.Status != m.Cancel {
+		return errors.New("invalid status")
+	}
+
+	// Validate birthday format
+	_, err := time.Parse("02/01/2006", reg.Birthday)
+	if err != nil {
+		return errors.New("invalid birthday format, should be DD/MM/YYYY")
+	}
+
+	return r.db.Save(reg).Error
 }
