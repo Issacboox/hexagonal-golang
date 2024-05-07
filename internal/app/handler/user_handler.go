@@ -2,6 +2,7 @@ package handler
 
 import (
 	"bam/internal/app/model"
+	"strings"
 
 	"github.com/gofiber/fiber/v2"
 )
@@ -23,20 +24,21 @@ func NewUserHandler(service UserActions) *UserHandler {
 }
 
 func (h *UserHandler) CreateUser(c *fiber.Ctx) error {
-
 	user := new(model.User)
 	if err := c.BodyParser(user); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
 	}
 
 	err := h.service.CreateUser(user)
-
 	if err != nil {
+		// Check if the error is due to the user already existing
+		if strings.Contains(err.Error(), "already exists") {
+			return c.Status(fiber.StatusConflict).JSON(fiber.Map{"error": err.Error()})
+		}
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
 	}
 
 	return c.Status(fiber.StatusCreated).JSON(user)
-
 }
 
 func (h *UserHandler) GetUser(c *fiber.Ctx) error {
@@ -96,5 +98,3 @@ func (h *UserHandler) GetUsers(c *fiber.Ctx) error {
 
 	return c.JSON(fiber.Map{"users": users, "total": len(users), "message": "success", "status": 200, "success": true})
 }
-
-
