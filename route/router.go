@@ -7,11 +7,11 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
-func RegisterRoutes(app *fiber.App, userService handler.UserActions, prodService handler.ProductActions, excelService handler.ExcelActions) {
+func RegisterRoutes(app *fiber.App, userService handler.UserActions, prodService handler.ProductActions, excelService handler.ExcelActions, approveService handler.ApproveActions) {
 	userHandler := handler.NewUserHandler(userService)
 	prodHandler := handler.NewProductHandler(prodService)
 	excelHandler := handler.NewExcelHandler(excelService)
-	// authHandler := handler.NewAuthHandler(authHandler)
+	approveHandler := handler.NewApproveHandler(approveService)
 
 	v1 := app.Group("/api/v1")
 	v1.Post("/users", userHandler.CreateUser)
@@ -33,4 +33,20 @@ func RegisterRoutes(app *fiber.App, userService handler.UserActions, prodService
 	// write to excel file
 	v1.Get("/write", excelHandler.ExportDataToExcel)
 
+	// ลงทะเบียนลาบวช
+	v1.Post("/ordination", approveHandler.RegisterOrdination)
+	// ค้นหาใช้ id
+	v1.Get("/ordination/:id", approveHandler.FindOrdinationByID)
+	// แก้ไข
+	v1.Put("/ordination/:id", approveHandler.UpdateOrdination)
+	// ลบ
+	v1.Delete("/ordination/:id", approveHandler.DeleteOrdination)
+	// เอาทั้งหมด
+	v1.Get("/ordination", approveHandler.FindOrdinations)
+	// ค้นหาจากชื่อ - นามสกุล
+	v1.Get("/ordination/name", approveHandler.FindOrdinationByName)
+	// ค้นหาจาก สถานะ
+	v1.Get("/ordination/status", approveHandler.FindOrdinationByStatus)
+	// update สถานะ ถ้า cancel , reject ต้องใส่ comment ด้วย
+	v1.Put(("/ordination/status/:id"), approveHandler.UpdateOrdinationStatus)
 }

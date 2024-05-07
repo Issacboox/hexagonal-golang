@@ -2,9 +2,9 @@ package main
 
 import (
 	// "bam/internal/app/handler"
-	"bam/internal/app/repository"
-	"bam/internal/app/service"
-	"bam/route"
+	r "bam/internal/app/repository"
+	s "bam/internal/app/service"
+	p "bam/route"
 
 	"bam/internal/infrastructure/database"
 	"encoding/json"
@@ -50,20 +50,22 @@ func main() {
 		panic(err)
 	}
 
-	userRepo := repository.NewUserRepository(db)
-	userService := service.NewUserService(userRepo)
+	userRepo := r.NewUserRepository(db)
+	userService := s.NewUserService(userRepo)
 
-	prodRepo := repository.NewProductRepository(db)
-	prodService := service.NewProductService(prodRepo)
+	prodRepo := r.NewProductRepository(db)
+	prodService := s.NewProductService(prodRepo)
 
-	excelRepo := repository.NewExcelRepository(db)
-	excelService := service.NewExcelService(excelRepo)
+	excelRepo := r.NewExcelRepository(db)
+	excelService := s.NewExcelService(excelRepo)
+
+	approveRepo := r.NewApproveRepository(db)
+	approveService := s.NewApproveService(approveRepo)
 
 	// authRepo := repository.NewAuthRepository(db)
 	// authService := service.NewAuthService(authRepo)
 
-
-	route.RegisterRoutes(app, userService, prodService, excelService)
+	p.RegisterRoutes(app, userService, prodService, excelService, approveService)
 
 	err = app.Listen(":8080")
 	if err != nil {
