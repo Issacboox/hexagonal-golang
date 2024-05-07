@@ -2,6 +2,9 @@ package repository
 
 import (
 	m "bam/internal/app/model"
+	"errors"
+	"fmt"
+	"time"
 
 	"gorm.io/gorm"
 )
@@ -11,7 +14,7 @@ type IApproveRepository interface {
 	FindOrdinationByID(id uint) (*m.RegisOrdinary, error)
 	UpdateOrdination(reg *m.RegisOrdinary) error
 	DeleteOrdination(id uint) error
-	FindOrdinationByName(firstName, lastName string) (*m.RegisOrdinary, error)
+	FindOrdinationByName(name string) ([]*m.RegisOrdinary, error)
 	FindOrdinations() ([]*m.RegisOrdinary, error)
 	FindOrdinationByStatus(status string) (*m.RegisOrdinary, error)
 	UpdateOrdinationStatus(id uint, status, comment string) error
@@ -26,9 +29,23 @@ func NewApproveRepository(db *gorm.DB) *ApproveRepository {
 	return &ApproveRepository{db: db}
 }
 
-// repository/approve_repository.go
 func (r *ApproveRepository) RegisterOrdination(reg *m.RegisOrdinary) error {
-    return r.db.Create(reg).Error
+	// Format the birthday to DD/MM/YYYY
+	birthday, err := time.Parse("02/01/2006", reg.Birthday)
+	if err != nil {
+		return err
+	}
+	reg.Birthday = birthday.Format("02/01/2006")
+
+	// Check if the gender is valid
+	switch reg.Gender {
+	case m.Man, m.Woman, m.PreferNotToSay, m.Alternative:
+		// Valid gender, proceed
+	default:
+		return fmt.Errorf("invalid gender: %s", reg.Gender)
+	}
+
+	return r.db.Create(reg).Error
 }
 
 func (r *ApproveRepository) FindOrdinationByID(id uint) (*m.RegisOrdinary, error) {
@@ -38,6 +55,17 @@ func (r *ApproveRepository) FindOrdinationByID(id uint) (*m.RegisOrdinary, error
 }
 
 func (r *ApproveRepository) UpdateOrdination(reg *m.RegisOrdinary) error {
+	// Validate gender
+	if reg.Gender != m.Man && reg.Gender != m.Woman && reg.Gender != m.PreferNotToSay && reg.Gender != m.Alternative {
+		return errors.New("invalid gender")
+	}
+
+	// Validate birthday format
+	_, err := time.Parse("02/01/2006", reg.Birthday)
+	if err != nil {
+		return errors.New("invalid birthday format, should be DD/MM/YYYY")
+	}
+
 	return r.db.Save(reg).Error
 }
 
@@ -45,14 +73,15 @@ func (r *ApproveRepository) DeleteOrdination(id uint) error {
 	return r.db.Delete(&m.RegisOrdinary{}, id).Error
 }
 
-func (r *ApproveRepository) FindOrdinationByName(firstName, lastName string) (*m.RegisOrdinary, error) {
-	var reg m.RegisOrdinary
-	result := r.db.Where("fname = ? OR lname = ?", firstName, lastName).First(&reg)
+func (r *ApproveRepository) FindOrdinationByName(name string) ([]*m.RegisOrdinary, error) {
+	var regs []*m.RegisOrdinary
+	result := r.db.Where("fname LIKE ? OR lname LIKE ?", "%"+name+"%", "%"+name+"%").Find(&regs)
 	if result.Error != nil {
 		return nil, result.Error
 	}
-	return &reg, nil
+	return regs, nil
 }
+
 
 func (r *ApproveRepository) FindOrdinations() ([]*m.RegisOrdinary, error) {
 	var regs []*m.RegisOrdinary

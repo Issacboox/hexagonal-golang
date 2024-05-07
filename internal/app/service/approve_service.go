@@ -26,21 +26,49 @@ func (s *ApproveService) FindOrdinationByID(id uint) (*m.RegisOrdinary, error) {
 	return s.repo.FindOrdinationByID(id)
 }
 
-func (s *ApproveService) UpdateOrdination(reg *m.RegisOrdinary) error {
-	return s.repo.UpdateOrdination(reg)
+func (s *ApproveService) UpdateOrdination(user *m.RegisOrdinary) error {
+	// Find the existing user
+	existingUser, err := s.repo.FindOrdinationByID(user.ID)
+	if err != nil {
+		return err
+	}
 
+	// Update only the fields that are non-empty
+	if user.FirstName != "" {
+		existingUser.FirstName = user.FirstName
+	}
+	if user.LastName != "" {
+		existingUser.LastName = user.LastName
+	}
+	if user.Birthday != "" {
+		existingUser.Birthday = user.Birthday
+	}
+	if user.Gender != "" {
+		existingUser.Gender = user.Gender
+	}
+	if user.Status != "" {
+		existingUser.Status = user.Status
+	}
+	if user.Comment != nil {
+		existingUser.Comment = user.Comment
+	}
+
+	// Save the updated user
+	return s.repo.UpdateOrdination(existingUser)
 }
+
 func (s *ApproveService) DeleteOrdination(id uint) error {
 	return s.repo.DeleteOrdination(id)
 }
 
-func (s *ApproveService) FindOrdinationByName(firstName, lastName string) (*m.RegisOrdinary, error) {
-	return s.repo.FindOrdinationByName(firstName, lastName)
+// service
+func (s *ApproveService) FindOrdinationByName(name string) ([]*m.RegisOrdinary, error) {
+    return s.repo.FindOrdinationByName(name)
 }
 
 // service/approve_service.go
 func (s *ApproveService) FindOrdinations() ([]*m.RegisOrdinary, error) {
-    return s.repo.FindOrdinations()
+	return s.repo.FindOrdinations()
 }
 
 func (s *ApproveService) FindOrdinationByStatus(status string) (*m.RegisOrdinary, error) {
@@ -50,4 +78,3 @@ func (s *ApproveService) FindOrdinationByStatus(status string) (*m.RegisOrdinary
 func (s *ApproveService) UpdateOrdinationStatus(id uint, status, comment string) error {
 	return s.repo.UpdateOrdinationStatus(id, status, comment)
 }
-

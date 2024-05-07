@@ -4,6 +4,7 @@ import (
 	m "bam/internal/app/model"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/gofiber/fiber/v2"
 	// "strings"
@@ -15,7 +16,7 @@ type ApproveActions interface {
 	FindOrdinationByID(id uint) (*m.RegisOrdinary, error)
 	UpdateOrdination(user *m.RegisOrdinary) error
 	DeleteOrdination(id uint) error
-	FindOrdinationByName(firstName, lastName string) (*m.RegisOrdinary, error)
+	FindOrdinationByName(name string) ([]*m.RegisOrdinary, error)
 	FindOrdinations() ([]*m.RegisOrdinary, error)
 	FindOrdinationByStatus(status string) (*m.RegisOrdinary, error)
 	UpdateOrdinationStatus(id uint, status, comment string) error
@@ -35,7 +36,22 @@ func (h *ApproveHandler) RegisterOrdination(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
 	}
 
-	err := h.service.RegisterOrdination(reg)
+	// Validate gender
+	switch reg.Gender {
+	case m.Man, m.Woman, m.PreferNotToSay, m.Alternative:
+		// Valid gender, proceed
+	default:
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid gender"})
+	}
+
+	// Validate and format birthday
+	birthday, err := time.Parse("02/01/2006", reg.Birthday)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid birthday format. Use DD/MM/YYYY"})
+	}
+	reg.Birthday = birthday.Format("02/01/2006")
+
+	err = h.service.RegisterOrdination(reg)
 	if err != nil {
 		// Check if the error is due to the user already existing
 		if strings.Contains(err.Error(), "already exists") {
@@ -67,7 +83,7 @@ func (h *ApproveHandler) UpdateOrdination(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
 	}
 
-	new := new(m.RegisOrdinary)
+	new := &m.RegisOrdinary{}
 	if err := c.BodyParser(new); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
 	}
@@ -79,7 +95,6 @@ func (h *ApproveHandler) UpdateOrdination(c *fiber.Ctx) error {
 	}
 
 	return c.JSON(new)
-
 }
 
 func (h *ApproveHandler) DeleteOrdination(c *fiber.Ctx) error {
@@ -130,10 +145,9 @@ func (h *ApproveHandler) FindOrdinationByStatus(c *fiber.Ctx) error {
 }
 
 func (h *ApproveHandler) FindOrdinationByName(c *fiber.Ctx) error {
-	firstName := c.Query("first_name")
-	lastName := c.Query("last_name")
+	search := c.Query("search")
 
-	ord, err := h.service.FindOrdinationByName(firstName, lastName)
+	ord, err := h.service.FindOrdinationByName(search)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
 	}
