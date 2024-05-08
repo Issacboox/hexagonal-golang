@@ -6,19 +6,20 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
 
 type IApproveRepository interface {
 	RegisterOrdination(reg *m.RegisOrdinary) error
-	FindOrdinationByID(id uint) (*m.RegisOrdinary, error)
+	FindOrdinationByID(id uuid.UUID) (*m.RegisOrdinary, error)
 	UpdateOrdination(user *m.RegisOrdinary) error
-	DeleteOrdination(id uint) error
+	DeleteOrdination(id uuid.UUID) error
 	FindOrdinationByName(name string) ([]*m.RegisOrdinary, error)
 	FindOrdinations() ([]*m.RegisOrdinary, error)
 	FindOrdinationByStatus(status string) ([]*m.RegisOrdinary, error)
 	BeginTransaction() *gorm.DB
-	UpdateOrdinationStatus(id uint, status, comment string, tx *gorm.DB) error
+	UpdateOrdinationStatus(id uuid.UUID, status, comment string, tx *gorm.DB) error
 }
 
 type ApproveRepository struct {
@@ -49,7 +50,7 @@ func (r *ApproveRepository) RegisterOrdination(reg *m.RegisOrdinary) error {
 	return r.db.Create(reg).Error
 }
 
-func (r *ApproveRepository) FindOrdinationByID(id uint) (*m.RegisOrdinary, error) {
+func (r *ApproveRepository) FindOrdinationByID(id uuid.UUID) (*m.RegisOrdinary, error) {
 	var reg m.RegisOrdinary
 	result := r.db.First(&reg, id)
 	return &reg, result.Error
@@ -70,8 +71,22 @@ func (r *ApproveRepository) UpdateOrdination(reg *m.RegisOrdinary) error {
 	return r.db.Save(reg).Error
 }
 
-func (r *ApproveRepository) DeleteOrdination(id uint) error {
-	return r.db.Delete(&m.RegisOrdinary{}, id).Error
+func (r *ApproveRepository) DeleteOrdination(id uuid.UUID) error {
+	// Check if the record exists
+	var ordination m.RegisOrdinary
+	if err := r.db.First(&ordination, id).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return fmt.Errorf("ordination with ID %d not found", id)
+		}
+		return err
+	}
+
+	// Delete the record
+	if err := r.db.Delete(&ordination).Error; err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (r *ApproveRepository) FindOrdinationByName(name string) ([]*m.RegisOrdinary, error) {
@@ -102,6 +117,6 @@ func (r *ApproveRepository) BeginTransaction() *gorm.DB {
 	return r.db.Begin()
 }
 
-func (r *ApproveRepository) UpdateOrdinationStatus(id uint, status, comment string, tx *gorm.DB) error {
+func (r *ApproveRepository) UpdateOrdinationStatus(id uuid.UUID, status, comment string, tx *gorm.DB) error {
 	return r.db.Model(&m.RegisOrdinary{}).Where("id = ?", id).Update("status", status).Update("comment", comment).Error
 }

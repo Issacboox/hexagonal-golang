@@ -1,5 +1,7 @@
 package model
 
+import "github.com/google/uuid"
+
 type Gender string
 
 const (
@@ -24,13 +26,13 @@ const (
 )
 
 type RegisOrdinary struct {
-	ID        uint    `json:"id" gorm:"primaryKey"`
-	FirstName string  `json:"fname" validate:"required"`
-	LastName  string  `json:"lname" validate:"required"`
-	Birthday  string  `json:"bday" validate:"required"`
-	Gender    Gender  `json:"gender" validate:"required"`
-	Status    Status  `json:"status" gorm:"default:'waiting'"`
-	Comment   *string `json:"comment" gorm:"default:null"`
+	ID        uuid.UUID `json:"id" gorm:"type:uuid;default:uuid_generate_v4()"`
+	FirstName string    `json:"fname" validate:"required"`
+	LastName  string    `json:"lname" validate:"required"`
+	Birthday  string    `json:"bday" validate:"required"`
+	Gender    Gender    `json:"gender" validate:"required"`
+	Status    Status    `json:"status" gorm:"default:'waiting'"`
+	Comment   *string   `json:"comment" gorm:"default:null"`
 }
 
 type Pagination struct {

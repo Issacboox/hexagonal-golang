@@ -4,6 +4,7 @@ import (
 	m "bam/internal/app/model"
 	r "bam/internal/app/repository"
 
+	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
 
@@ -15,7 +16,7 @@ func NewApproveService(repo r.IApproveRepository) *ApproveService {
 	return &ApproveService{repo: repo}
 }
 
-func (s *ApproveService) GetUserByID(id uint) (*m.RegisOrdinary, error) {
+func (s *ApproveService) GetUserByID(id uuid.UUID) (*m.RegisOrdinary, error) {
 	return s.repo.FindOrdinationByID(id)
 }
 
@@ -24,7 +25,7 @@ func (s *ApproveService) RegisterOrdination(reg *m.RegisOrdinary) error {
 }
 
 // service/approve_service.go
-func (s *ApproveService) FindOrdinationByID(id uint) (*m.RegisOrdinary, error) {
+func (s *ApproveService) FindOrdinationByID(id uuid.UUID) (*m.RegisOrdinary, error) {
 	return s.repo.FindOrdinationByID(id)
 }
 
@@ -59,7 +60,7 @@ func (s *ApproveService) UpdateOrdination(user *m.RegisOrdinary) error {
 	return s.repo.UpdateOrdination(existingUser)
 }
 
-func (s *ApproveService) DeleteOrdination(id uint) error {
+func (s *ApproveService) DeleteOrdination(id uuid.UUID) error {
 	return s.repo.DeleteOrdination(id)
 }
 
@@ -82,7 +83,7 @@ func (s *ApproveService) BeginTransaction() *gorm.DB {
 }
 
 // ApproveService
-func (s *ApproveService) UpdateOrdinationStatus(id uint, status, comment string, tx *gorm.DB) error {
+func (s *ApproveService) UpdateOrdinationStatus(id uuid.UUID, status, comment string, tx *gorm.DB) error {
 	err := s.repo.UpdateOrdinationStatus(id, status, comment, tx)
 	if err != nil {
 		return err

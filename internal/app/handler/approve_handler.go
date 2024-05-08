@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/google/uuid"
 	"gorm.io/gorm"
 	// "strings"
 	// "github.com/gofiber/fiber/v2"
@@ -15,14 +16,14 @@ import (
 
 type ApproveActions interface {
 	RegisterOrdination(reg *m.RegisOrdinary) error
-	FindOrdinationByID(id uint) (*m.RegisOrdinary, error)
+	FindOrdinationByID(id uuid.UUID) (*m.RegisOrdinary, error)
 	UpdateOrdination(user *m.RegisOrdinary) error
-	DeleteOrdination(id uint) error
+	DeleteOrdination(id uuid.UUID) error
 	FindOrdinationByName(name string) ([]*m.RegisOrdinary, error)
 	FindOrdinations() ([]*m.RegisOrdinary, error)
 	FindOrdinationByStatus(status string) ([]*m.RegisOrdinary, error)
 	BeginTransaction() *gorm.DB
-	UpdateOrdinationStatus(id uint, status, comment string, tx *gorm.DB) error
+	UpdateOrdinationStatus(id uuid.UUID, status, comment string, tx *gorm.DB) error
 }
 
 type ApproveHandler struct {
@@ -36,7 +37,7 @@ func NewApproveHandler(service ApproveActions) *ApproveHandler {
 func (h *ApproveHandler) RegisterOrdination(c *fiber.Ctx) error {
 	reg := new(m.RegisOrdinary)
 	if err := c.BodyParser(reg); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid request format"})
 	}
 
 	// Validate gender
@@ -54,25 +55,28 @@ func (h *ApproveHandler) RegisterOrdination(c *fiber.Ctx) error {
 	}
 	reg.Birthday = birthday.Format("02/01/2006")
 
+	// Call service to register the ordination
 	err = h.service.RegisterOrdination(reg)
 	if err != nil {
 		// Check if the error is due to the user already existing
 		if strings.Contains(err.Error(), "already exists") {
-			return c.Status(fiber.StatusConflict).JSON(fiber.Map{"error": err.Error()})
+			return c.Status(fiber.StatusConflict).JSON(fiber.Map{"error": "User already exists"})
 		}
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to register ordination"})
 	}
 
+	// Ordination registered successfully
 	return c.Status(fiber.StatusCreated).JSON(reg)
 }
 
 func (h *ApproveHandler) FindOrdinationByID(c *fiber.Ctx) error {
-	id, err := c.ParamsInt("id")
+	idStr := c.Params("id")
+	id, err := uuid.Parse(idStr)
 	if err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid ID"})
+		return err
 	}
 
-	ord, err := h.service.FindOrdinationByID(uint(id))
+	ord, err := h.service.FindOrdinationByID(id)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
 	}
@@ -81,9 +85,10 @@ func (h *ApproveHandler) FindOrdinationByID(c *fiber.Ctx) error {
 }
 
 func (h *ApproveHandler) UpdateOrdination(c *fiber.Ctx) error {
-	id, err := c.ParamsInt("id")
+	idStr := c.Params("id")
+	id, err := uuid.Parse(idStr)
 	if err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid ID format"})
 	}
 
 	new := &m.RegisOrdinary{}
@@ -91,7 +96,7 @@ func (h *ApproveHandler) UpdateOrdination(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
 	}
 
-	new.ID = uint(id)
+	new.ID = id
 
 	if err := h.service.UpdateOrdination(new); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
@@ -101,16 +106,18 @@ func (h *ApproveHandler) UpdateOrdination(c *fiber.Ctx) error {
 }
 
 func (h *ApproveHandler) DeleteOrdination(c *fiber.Ctx) error {
-	id, err := c.ParamsInt("id")
+	idStr := c.Params("id")
+	_, err := strconv.ParseInt(idStr, 10, 64)
 	if err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid ID"})
 	}
 
-	if err := h.service.DeleteOrdination(uint(id)); err != nil {
+	id := uuid.MustParse(idStr)
+
+	if err := h.service.DeleteOrdination(id); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
 	}
 
-	// return c.SendStatus(fiber.StatusNoContent)
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{"complete": "Deleted"})
 }
 
@@ -169,13 +176,14 @@ func (h *ApproveHandler) UpdateOrdinationStatus(c *fiber.Ctx) error {
 	}
 
 	// Get ordination ID from request path parameter
-	id, err := strconv.Atoi(c.Params("id"))
+	idStr := c.Params("id")
+	id, err := uuid.Parse(idStr)
 	if err != nil {
 		return err
 	}
 
 	// Check if ordination exists
-	ord, err := h.service.FindOrdinationByID(uint(id))
+	ord, err := h.service.FindOrdinationByID(id)
 	if err != nil {
 		return err
 	}
@@ -200,7 +208,7 @@ func (h *ApproveHandler) UpdateOrdinationStatus(c *fiber.Ctx) error {
 	tx := h.service.BeginTransaction()
 	defer tx.Rollback()
 
-	err = h.service.UpdateOrdinationStatus(uint(id), string(m.Status(req.Status)), req.Comment, tx)
+	err = h.service.UpdateOrdinationStatus(id, string(m.Status(req.Status)), req.Comment, tx)
 
 	if err != nil {
 		return err
