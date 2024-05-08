@@ -2,11 +2,13 @@ package handler
 
 import (
 	m "bam/internal/app/model"
+	"errors"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
+	"gorm.io/gorm"
 	// "strings"
 	// "github.com/gofiber/fiber/v2"
 )
@@ -18,8 +20,9 @@ type ApproveActions interface {
 	DeleteOrdination(id uint) error
 	FindOrdinationByName(name string) ([]*m.RegisOrdinary, error)
 	FindOrdinations() ([]*m.RegisOrdinary, error)
-	FindOrdinationByStatus(status string) (*m.RegisOrdinary, error)
-	UpdateOrdinationStatus(id uint, status, comment string) error
+	FindOrdinationByStatus(status string) ([]*m.RegisOrdinary, error)
+	BeginTransaction() *gorm.DB
+	UpdateOrdinationStatus(id uint, status, comment string, tx *gorm.DB) error
 }
 
 type ApproveHandler struct {
@@ -155,26 +158,67 @@ func (h *ApproveHandler) FindOrdinationByName(c *fiber.Ctx) error {
 }
 
 func (h *ApproveHandler) UpdateOrdinationStatus(c *fiber.Ctx) error {
-	// Parse request body
-	var req struct {
-		ID      uint   `json:"id"`
-		Status  string `json:"status"`
-		Comment string `json:"comment"`
-	}
+	var req m.UpdateStatusRequest
 	if err := c.BodyParser(&req); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
+		return err
 	}
 
-	// Validate comment for Reject and Cancel statuses
-	if (req.Status == "Reject" || req.Status == "Cancel") && req.Comment == "" {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Comment is required for Reject and Cancel statuses"})
+	// Validate status and comment
+	if err := validateStatusAndComment(req); err != nil {
+		return err
 	}
 
-	// Update ordination status and comment
-	err := h.service.UpdateOrdinationStatus(req.ID, req.Status, req.Comment)
+	// Get ordination ID from request path parameter
+	id, err := strconv.Atoi(c.Params("id"))
 	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
+		return err
 	}
 
-	return c.JSON(fiber.Map{"message": "Ordination status and comment updated successfully", "status": 200, "success": true})
+	// Check if ordination exists
+	ord, err := h.service.FindOrdinationByID(uint(id))
+	if err != nil {
+		return err
+	}
+
+	// Check if status is the same as the current status
+	if ord.Status == m.Status(req.Status) {
+		return c.Status(fiber.StatusConflict).JSON(fiber.Map{
+			"error":   true,
+			"message": "Current status is the same as the requested status",
+		})
+	}
+
+	// Check if the new status is valid
+	if ord.Status == m.Approved && (req.Status == string(m.Reject) || req.Status == string(m.Cancel)) {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error":   true,
+			"message": "Cannot change status from approved to reject or cancel",
+		})
+	}
+
+	// Update ordination status
+	tx := h.service.BeginTransaction()
+	defer tx.Rollback()
+
+	err = h.service.UpdateOrdinationStatus(uint(id), string(m.Status(req.Status)), req.Comment, tx)
+
+	if err != nil {
+		return err
+	}
+
+	tx.Commit()
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"error":   false,
+		"message": "Ordination status updated successfully",
+	})
+}
+
+// validateStatusAndComment validates the status and comment fields of the UpdateStatusRequest.
+func validateStatusAndComment(req m.UpdateStatusRequest) error {
+	if req.Status != string(m.Approved) && (req.Status == string(m.Reject) || req.Status == string(m.Cancel)) && req.Comment == "" {
+		return errors.New("comment is required for reject or cancel status")
+	}
+
+	return nil
 }

@@ -12,12 +12,13 @@ import (
 type IApproveRepository interface {
 	RegisterOrdination(reg *m.RegisOrdinary) error
 	FindOrdinationByID(id uint) (*m.RegisOrdinary, error)
-	UpdateOrdination(reg *m.RegisOrdinary) error
+	UpdateOrdination(user *m.RegisOrdinary) error
 	DeleteOrdination(id uint) error
 	FindOrdinationByName(name string) ([]*m.RegisOrdinary, error)
 	FindOrdinations() ([]*m.RegisOrdinary, error)
-	FindOrdinationByStatus(status string) (*m.RegisOrdinary, error)
-	UpdateOrdinationStatus(id uint, status, comment string) error
+	FindOrdinationByStatus(status string) ([]*m.RegisOrdinary, error)
+	BeginTransaction() *gorm.DB
+	UpdateOrdinationStatus(id uint, status, comment string, tx *gorm.DB) error
 }
 
 type ApproveRepository struct {
@@ -88,29 +89,19 @@ func (r *ApproveRepository) FindOrdinations() ([]*m.RegisOrdinary, error) {
 	return regs, result.Error
 }
 
-func (r *ApproveRepository) FindOrdinationByStatus(status string) (*m.RegisOrdinary, error) {
-	var reg m.RegisOrdinary
-	result := r.db.Where("status = ?", status).First(&reg)
+func (r *ApproveRepository) FindOrdinationByStatus(status string) ([]*m.RegisOrdinary, error) {
+	var reg []*m.RegisOrdinary
+	result := r.db.Where("status = ?", status).Find(&reg)
 	if result.Error != nil {
 		return nil, result.Error
 	}
-	return &reg, nil
+	return reg, nil
 }
 
-// func (r *ApproveRepository) UpdateOrdinationStatus(id uint, status, comment string) error {
-// 	return r.db.Model(&m.RegisOrdinary{}).Where("id = ?", id).Updates(map[string]interface{}{"status": status, "comment": comment}).Error
-// }
-func (r *ApproveRepository) UpdateOrdinationStatus(reg *m.RegisOrdinary) error {
-	// Validate gender
-	if reg.Status != m.Waiting && reg.Status != m.Approve && reg.Status != m.Reject && reg.Status != m.Cancel {
-		return errors.New("invalid status")
-	}
+func (r *ApproveRepository) BeginTransaction() *gorm.DB {
+	return r.db.Begin()
+}
 
-	// Validate birthday format
-	_, err := time.Parse("02/01/2006", reg.Birthday)
-	if err != nil {
-		return errors.New("invalid birthday format, should be DD/MM/YYYY")
-	}
-
-	return r.db.Save(reg).Error
+func (r *ApproveRepository) UpdateOrdinationStatus(id uint, status, comment string, tx *gorm.DB) error {
+	return r.db.Model(&m.RegisOrdinary{}).Where("id = ?", id).Update("status", status).Update("comment", comment).Error
 }

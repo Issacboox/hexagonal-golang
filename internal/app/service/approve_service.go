@@ -3,7 +3,8 @@ package service
 import (
 	m "bam/internal/app/model"
 	r "bam/internal/app/repository"
-	"errors"
+
+	"gorm.io/gorm"
 )
 
 type ApproveService struct {
@@ -72,19 +73,20 @@ func (s *ApproveService) FindOrdinations() ([]*m.RegisOrdinary, error) {
 	return s.repo.FindOrdinations()
 }
 
-func (s *ApproveService) FindOrdinationByStatus(status string) (*m.RegisOrdinary, error) {
+func (s *ApproveService) FindOrdinationByStatus(status string) ([]*m.RegisOrdinary, error) {
 	return s.repo.FindOrdinationByStatus(status)
 }
 
-//	func (s *ApproveService) UpdateOrdinationStatus(id uint, status, comment string) error {
-//		return s.repo.UpdateOrdinationStatus(id, status, comment)
-//	}
-func (s *ApproveService) UpdateOrdinationStatus(id uint, status, comment string) error {
-	// Validate comment for Reject and Cancel statuses
-	if (status == "Reject" || status == "Cancel") && comment == "" {
-		return errors.New("comment is required for Reject and Cancel statuses")
+func (s *ApproveService) BeginTransaction() *gorm.DB {
+	return s.repo.BeginTransaction()
+}
+
+// ApproveService
+func (s *ApproveService) UpdateOrdinationStatus(id uint, status, comment string, tx *gorm.DB) error {
+	err := s.repo.UpdateOrdinationStatus(id, status, comment, tx)
+	if err != nil {
+		return err
 	}
 
-	// Update ordination status and comment
-	return s.repo.UpdateOrdinationStatus(id, status, comment)
+	return nil
 }
