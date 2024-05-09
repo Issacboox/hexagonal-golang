@@ -26,7 +26,6 @@ type Claims struct {
 	jwt.RegisteredClaims
 }
 
-// GenerateToken implements handler.JWTActions.
 func (*JWTService) GenerateToken(userID uint) (string, error) {
 	expirationTime := time.Now().Add(1 * time.Hour)
 
@@ -61,3 +60,6 @@ func (*JWTService) VerifyToken(tokenString string) (*Claims, error) {
 
 	return claims, nil
 }
+
+// Explicitly implement the JWTActions interface
+var _ JWTActions = (*JWTService)(nil)

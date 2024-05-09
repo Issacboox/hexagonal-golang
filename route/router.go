@@ -2,18 +2,26 @@
 package route
 
 import (
-	"bam/internal/app/handler"
+	h "bam/internal/app/handler"
+	m "bam/internal/middleware"
 
 	"github.com/gofiber/fiber/v2"
 )
 
-func RegisterRoutes(app *fiber.App, userService handler.UserActions, prodService handler.ProductActions, excelService handler.ExcelActions, approveService handler.ApproveActions) {
-	userHandler := handler.NewUserHandler(userService)
-	prodHandler := handler.NewProductHandler(prodService)
-	excelHandler := handler.NewExcelHandler(excelService)
-	approveHandler := handler.NewApproveHandler(approveService)
+type AuthActions = h.AuthActions
+
+func RegisterRoutes(app *fiber.App, userService h.UserActions, prodService h.ProductActions, excelService h.ExcelActions, approveService h.ApproveActions) {
+	userHandler := h.NewUserHandler(userService)
+	prodHandler := h.NewProductHandler(prodService)
+	excelHandler := h.NewExcelHandler(excelService)
+	approveHandler := h.NewApproveHandler(approveService)
+	// authHandler := h.NewAuthHandler(userService, jwtService)
 
 	v1 := app.Group("/api/v1")
+
+	// Apply AuthRequired middleware to routes that require authentication
+	// v1.Use(m.AuthRequired())
+
 	v1.Post("/users", userHandler.CreateUser)
 	v1.Get("/users/:id", userHandler.GetUser)
 	v1.Put("/users/:id", userHandler.UpdateUser)
@@ -40,7 +48,7 @@ func RegisterRoutes(app *fiber.App, userService handler.UserActions, prodService
 	// แก้ไข
 	v1.Put("/ordination/:id", approveHandler.UpdateOrdination)
 	// ลบ
-	v1.Delete("/ordination/:id", approveHandler.DeleteOrdination)
+	v1.Delete("/ordination/:id", m.AuthRequired(), approveHandler.DeleteOrdination)
 	// เอาทั้งหมด
 	v1.Get("/ordination", approveHandler.FindOrdinations)
 	// ค้นหาจากชื่อ - นามสกุล
@@ -49,4 +57,8 @@ func RegisterRoutes(app *fiber.App, userService handler.UserActions, prodService
 	v1.Get("/ordstatus", approveHandler.FindOrdinationByStatus)
 	// update สถานะ ถ้า cancel , reject ต้องใส่ comment ด้วย
 	v1.Put(("/ordstatus/:id"), approveHandler.UpdateOrdinationStatus)
+
+	// Add login and logout routes
+	// v1.Post("/login", authHandler.Login)
+	// v1.Post("/logout", authHandler.Logout)
 }

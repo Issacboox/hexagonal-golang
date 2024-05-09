@@ -15,20 +15,29 @@ type JWTActions interface {
 	GenerateToken(userID uint) (string, error)
 	VerifyToken(tokenString string) (*s.Claims, error)
 }
-
 type AuthHandler struct {
-	userService AuthActions
-	jwtService  JWTActions
+	userService s.UserService
+	jwtService  s.JWTActions
 }
 
-func NewAuthHandler(userService AuthActions, jwtActions JWTActions) *AuthHandler {
+// NewAuthHandler creates a new AuthHandler instance
+func NewAuthHandler(userService s.UserService, jwtActions s.JWTActions) *AuthHandler {
 	return &AuthHandler{userService: userService, jwtService: jwtActions}
 }
 
-func (h *AuthHandler) RegisterRoutes(app *fiber.App) {
-	app.Post("/login", h.Login)
-	app.Post("/logout", h.Logout)
+func (h *AuthHandler) AuthenticateUser(email, password string) (*m.User, error) {
+    // Implement your authentication logic here
+    user, err := h.userService.AuthenticateUser(email, password)
+    if err != nil {
+        return nil, err
+    }
+
+    // Generate and store the token if needed
+    _, _ = h.jwtService.GenerateToken(user.ID)
+
+    return user, nil
 }
+
 
 func (h *AuthHandler) Login(c *fiber.Ctx) error {
 	var input m.LoginInput

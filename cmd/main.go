@@ -1,12 +1,11 @@
 package main
 
 import (
-	// "bam/internal/app/handler"
 	r "bam/internal/app/repository"
 	s "bam/internal/app/service"
-	p "bam/route"
 
 	"bam/internal/infrastructure/database"
+	p "bam/route"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -61,9 +60,6 @@ func main() {
 
 	approveRepo := r.NewApproveRepository(db)
 	approveService := s.NewApproveService(approveRepo)
-
-	// authRepo := repository.NewAuthRepository(db)
-	// authService := service.NewAuthService(authRepo)
 
 	p.RegisterRoutes(app, userService, prodService, excelService, approveService)
 
